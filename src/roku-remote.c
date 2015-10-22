@@ -4,24 +4,69 @@ static Window *window;
 static TextLayer *text_layer;
 
 /*****************************/
+/* Data Model                */
+/*****************************/
+short selected_col;
+const char *columns[][3] = {
+  {"Play", "Rev", "Fwd"},
+  {"Home", "Back", "Select"},
+  {"Left", "Right", "Info"},
+  {"Up", "Down", "InstantReplay"},
+  {"Backspace", "Search", "Enter"},
+};
+
+static void init_columns(void) {
+  selected_col = 0;
+}
+
+
+/*****************************/
 /* CLICK HANDLERS            */
 /*****************************/
+/* Single click handlers that are remote button presses */
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Select");
+  text_layer_set_text(text_layer, columns[selected_col][1]);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Up");
+  text_layer_set_text(text_layer, columns[selected_col][0]);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
-  text_layer_set_text(text_layer, "Down");
+  text_layer_set_text(text_layer, columns[selected_col][2]);
+}
+
+/* Column-changing handlers */
+char label[10];
+
+static void drawCol(void) {
+  snprintf(label, 10, "Column %d", selected_col);
+  text_layer_set_text(text_layer, label);
+}
+
+static void nextcol_click_handler(ClickRecognizerRef recognizer, void *context) {
+  selected_col = (selected_col + 1) % 5;
+  drawCol();
+}
+
+static void prevcol_click_handler(ClickRecognizerRef recognizer, void *context) {
+  if (selected_col == 0) {
+    selected_col = 4;
+  } else {
+    selected_col = (selected_col - 1);
+  }
+  drawCol();
 }
 
 static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
   window_single_click_subscribe(BUTTON_ID_UP, up_click_handler);
   window_single_click_subscribe(BUTTON_ID_DOWN, down_click_handler);
+
+  window_long_click_subscribe(BUTTON_ID_UP, 500, NULL, prevcol_click_handler);
+  window_long_click_subscribe(BUTTON_ID_DOWN, 500, NULL, nextcol_click_handler);
+  window_multi_click_subscribe(BUTTON_ID_UP, 2, 0, 300, true, prevcol_click_handler);
+  window_multi_click_subscribe(BUTTON_ID_DOWN, 2, 0, 300, true, nextcol_click_handler);
 }
 
 /*******************************/
@@ -47,6 +92,7 @@ static void window_unload(Window *window) {
 /* App Startup/shutdown        */
 /*******************************/
 static void init(void) {
+  init_columns();
   window = window_create();
   window_set_click_config_provider(window, click_config_provider);
   window_set_window_handlers(window, (WindowHandlers) {
