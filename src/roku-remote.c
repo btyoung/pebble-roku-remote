@@ -3,6 +3,10 @@
 static Window *window;
 static TextLayer *text_layer;
 
+enum {
+  KEYPRESS = 0,
+};
+
 /*****************************/
 /* Data Model                */
 /*****************************/
@@ -24,15 +28,28 @@ static void init_columns(void) {
 /* CLICK HANDLERS            */
 /*****************************/
 /* Single click handlers that are remote button presses */
+static void sendKey(const char *keylabel) {
+  APP_LOG(APP_LOG_LEVEL_INFO, "Sending key");
+  APP_LOG(APP_LOG_LEVEL_INFO, keylabel);
+  DictionaryIterator* iter = NULL;
+  app_message_outbox_begin(&iter);
+  dict_write_cstring(iter, KEYPRESS, keylabel);
+  dict_write_end(iter);
+  app_message_outbox_send();
+}
+
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
+  sendKey(columns[selected_col][1]);
   text_layer_set_text(text_layer, columns[selected_col][1]);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
+  sendKey(columns[selected_col][0]);
   text_layer_set_text(text_layer, columns[selected_col][0]);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
+  sendKey(columns[selected_col][2]);
   text_layer_set_text(text_layer, columns[selected_col][2]);
 }
 
@@ -87,12 +104,42 @@ static void window_unload(Window *window) {
 }
 
 
+/*******************************/
+/* Message Management          */
+/*******************************/
+static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Message received!");
+}
+
+static void inbox_dropped_callback(AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Message dropped!");
+}
+
+static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Outbox send failed!");
+}
+
+static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
+  APP_LOG(APP_LOG_LEVEL_INFO, "Outbox send success!");
+}
+
 
 /*******************************/
 /* App Startup/shutdown        */
 /*******************************/
 static void init(void) {
+  // Set up data
   init_columns();
+
+  // Set up messages
+  app_message_register_inbox_received(inbox_received_callback);
+  app_message_register_inbox_dropped(inbox_dropped_callback);
+  app_message_register_outbox_failed(outbox_failed_callback);
+  app_message_register_outbox_sent(outbox_sent_callback);
+  app_message_open(app_message_inbox_size_maximum(),
+                   app_message_outbox_size_maximum());
+
+  // Set up windows
   window = window_create();
   window_set_click_config_provider(window, click_config_provider);
   window_set_window_handlers(window, (WindowHandlers) {
