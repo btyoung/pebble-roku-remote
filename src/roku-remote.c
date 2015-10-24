@@ -16,8 +16,22 @@ const char *columns[][3] = {
   {"Home", "Back", "Select"},
   {"Left", "Right", "Info"},
   {"Up", "Down", "InstantReplay"},
-  {"Backspace", "Search", "Enter"},
+  //{"Backspace", "Search", "Enter"},
 };
+
+// Icon Mapping:
+// Play: roku_playpause
+// Rev: music_icon_skip_backward
+// Fwd: music_icon_skip_fwd
+// Home: roku_home
+// Back: roku_back
+// Select: action_bar_icon_check
+// Left: roku_left
+// Right: roku_right
+// Info: roku_info
+// Up: roku_up
+// Down: roku_down
+// InstantReplay: roku_instant_replay
 
 static void init_columns(void) {
   selected_col = 0;
@@ -62,13 +76,13 @@ static void drawCol(void) {
 }
 
 static void nextcol_click_handler(ClickRecognizerRef recognizer, void *context) {
-  selected_col = (selected_col + 1) % 5;
+  selected_col = (selected_col + 1) % 4;
   drawCol();
 }
 
 static void prevcol_click_handler(ClickRecognizerRef recognizer, void *context) {
   if (selected_col == 0) {
-    selected_col = 4;
+    selected_col = 3;
   } else {
     selected_col = (selected_col - 1);
   }
