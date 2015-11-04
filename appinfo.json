@@ -5,7 +5,7 @@
   "companyName": "Brian Young",
   "versionLabel": "1.0",
   "sdkVersion": "3",
-  "targetPlatforms": ["aplite", "basalt"],
+  "targetPlatforms": ["basalt"],
   "watchapp": {
     "watchface": false
   },
@@ -13,6 +13,19 @@
     "dummy": 0
   },
   "resources": {
-    "media": []
+    "media": [
+      {"type": "png", "name": "ROKU_PLAYPAUSE", "file": "roku_playpause.png"},
+      {"type": "png", "name": "ROKU_BACK", "file": "roku_back.png"},
+      {"type": "png", "name": "ROKU_DOWN", "file": "roku_down.png"},
+      {"type": "png", "name": "ROKU_HOME", "file": "roku_home.png"},
+      {"type": "png", "name": "ROKU_INFO", "file": "roku_info.png"},
+      {"type": "png", "name": "ROKU_LEFT", "file": "roku_left.png"},
+      {"type": "png", "name": "ROKU_REPLAY", "file": "roku_replay.png"},
+      {"type": "png", "name": "ROKU_RIGHT", "file": "roku_right.png"},
+      {"type": "png", "name": "ROKU_UP", "file": "roku_up.png"},
+      {"type": "png", "name": "ROKU_REV", "file": "roku_rev.png"},
+      {"type": "png", "name": "ROKU_FWD", "file": "roku_fwd.png"},
+      {"type": "png", "name": "ROKU_SELECT", "file": "roku_select.png"}
+    ]
   }
 }

@@ -1,7 +1,11 @@
 #include <pebble.h>
 
 static Window *window;
-static TextLayer *text_layer;
+static Layer *col_indicator;
+
+
+
+
 
 enum {
   KEYPRESS = 0,
@@ -18,25 +22,37 @@ const char *columns[][3] = {
   {"Up", "Down", "InstantReplay"},
   //{"Backspace", "Search", "Enter"},
 };
-
-// Icon Mapping:
-// Play: roku_playpause
-// Rev: music_icon_skip_backward
-// Fwd: music_icon_skip_fwd
-// Home: roku_home
-// Back: roku_back
-// Select: action_bar_icon_check
-// Left: roku_left
-// Right: roku_right
-// Info: roku_info
-// Up: roku_up
-// Down: roku_down
-// InstantReplay: roku_instant_replay
+BitmapLayer *icons[4][3];
+const uint32_t icon_resources[][3] = {
+  {RESOURCE_ID_ROKU_PLAYPAUSE, RESOURCE_ID_ROKU_REV, RESOURCE_ID_ROKU_FWD},
+  {RESOURCE_ID_ROKU_HOME, RESOURCE_ID_ROKU_BACK, RESOURCE_ID_ROKU_SELECT},
+  {RESOURCE_ID_ROKU_LEFT, RESOURCE_ID_ROKU_RIGHT, RESOURCE_ID_ROKU_INFO},
+  {RESOURCE_ID_ROKU_UP, RESOURCE_ID_ROKU_DOWN, RESOURCE_ID_ROKU_REPLAY},
+};
+const int vpos[] = {50, 95, 140};
+const int hpos[] = {18, 54, 90, 126};
 
 static void init_columns(void) {
   selected_col = 0;
 }
 
+static PropertyAnimation *s_property_animation;
+
+static void set_column_bar(int col) {
+  // Set start and end
+  Layer *window_layer = window_get_root_layer(window);
+  GRect bounds = layer_get_bounds(window_layer);
+
+  GRect from_frame = layer_get_frame(col_indicator);
+  GRect to_frame = GRect(hpos[selected_col]-20, 0, 40, bounds.size.h);
+
+  // Create the animation
+  s_property_animation = property_animation_create_layer_frame(
+                  col_indicator, &from_frame, &to_frame);
+  animation_set_duration((Animation *) s_property_animation, 100);
+
+  animation_schedule((Animation*) s_property_animation);
+}
 
 /*****************************/
 /* CLICK HANDLERS            */
@@ -54,17 +70,17 @@ static void sendKey(const char *keylabel) {
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   sendKey(columns[selected_col][1]);
-  text_layer_set_text(text_layer, columns[selected_col][1]);
+  //text_layer_set_text(text_layer, columns[selected_col][1]);
 }
 
 static void up_click_handler(ClickRecognizerRef recognizer, void *context) {
   sendKey(columns[selected_col][0]);
-  text_layer_set_text(text_layer, columns[selected_col][0]);
+ // text_layer_set_text(text_layer, columns[selected_col][0]);
 }
 
 static void down_click_handler(ClickRecognizerRef recognizer, void *context) {
   sendKey(columns[selected_col][2]);
-  text_layer_set_text(text_layer, columns[selected_col][2]);
+ // text_layer_set_text(text_layer, columns[selected_col][2]);
 }
 
 /* Column-changing handlers */
@@ -72,7 +88,8 @@ char label[10];
 
 static void drawCol(void) {
   snprintf(label, 10, "Column %d", selected_col);
-  text_layer_set_text(text_layer, label);
+  set_column_bar(selected_col);
+  // text_layer_set_text(text_layer, label);
 }
 
 static void nextcol_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -100,21 +117,62 @@ static void click_config_provider(void *context) {
   window_multi_click_subscribe(BUTTON_ID_DOWN, 2, 0, 300, true, nextcol_click_handler);
 }
 
-/*******************************/
-/* Window Management           */
-/*******************************/
+/***********************************/
+/* Window and Graphics Management  */
+/***********************************/
+// Define list of icons
+// Define overlay bar
+// Set method to slide bar left/right on press
+// Set method to Bounce icon when clicked
+
+
+static void col_indicator_update(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
+
+  graphics_context_set_fill_color(ctx, GColorFromRGB(100,100,255));
+  graphics_fill_rect(ctx, bounds, 5, GCornersAll);
+}
+
+
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  text_layer = text_layer_create((GRect) { .origin = { 0, 72 }, .size = { bounds.size.w, 20 } });
-  text_layer_set_text(text_layer, "Press a button");
-  text_layer_set_text_alignment(text_layer, GTextAlignmentCenter);
-  layer_add_child(window_layer, text_layer_get_layer(text_layer));
+  window_set_background_color(window, GColorFromRGB(0, 0, 0));
+
+  // Set up column indicator
+  col_indicator = layer_create((GRect) {
+    .origin = { hpos[selected_col] - 18, 0 },
+    .size = {36, bounds.size.h},
+  });
+  layer_set_update_proc(col_indicator, col_indicator_update);
+  layer_add_child(window_layer, col_indicator);
+
+  // Set up Icons
+  for (int row=0; row < 3; row++) {
+    for (int col=0; col < 4; col++) {
+      icons[col][row] = bitmap_layer_create((GRect) {
+        .origin = {hpos[col] - 10, vpos[row] - 10},
+        .size = {20, 20}
+      });
+      bitmap_layer_set_alignment(icons[col][row], GAlignCenter);
+      bitmap_layer_set_compositing_mode(icons[col][row], GCompOpOr);
+      
+      bitmap_layer_set_bitmap(icons[col][row],
+              gbitmap_create_with_resource(icon_resources[col][row]));
+      layer_add_child(window_layer, bitmap_layer_get_layer(icons[col][row]));
+    }
+  }
 }
 
+
 static void window_unload(Window *window) {
-  text_layer_destroy(text_layer);
+  layer_destroy(col_indicator);
+  for (int row=0; row < 3; row++) {
+    for (int col=0; col < 4; col++) {
+      bitmap_layer_destroy(icons[col][row]);
+    }
+  }
 }
 
 
