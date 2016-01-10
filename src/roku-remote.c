@@ -3,10 +3,6 @@
 static Window *window;
 static Layer *col_indicator;
 
-
-
-
-
 enum {
   KEYPRESS = 0,
 };
@@ -156,7 +152,7 @@ static void window_load(Window *window) {
         .size = {20, 20}
       });
       bitmap_layer_set_alignment(icons[col][row], GAlignCenter);
-      bitmap_layer_set_compositing_mode(icons[col][row], GCompOpOr);
+      bitmap_layer_set_compositing_mode(icons[col][row], GCompOpSet);
       
       bitmap_layer_set_bitmap(icons[col][row],
               gbitmap_create_with_resource(icon_resources[col][row]));
