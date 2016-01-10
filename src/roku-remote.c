@@ -2,6 +2,7 @@
 
 static Window *window;
 static Layer *col_indicator;
+static StatusBarLayer *statusbar;
 
 enum {
   KEYPRESS = 0,
@@ -40,7 +41,7 @@ static void set_column_bar(int col) {
   GRect bounds = layer_get_bounds(window_layer);
 
   GRect from_frame = layer_get_frame(col_indicator);
-  GRect to_frame = GRect(hpos[selected_col]-20, 0, 40, bounds.size.h);
+  GRect to_frame = GRect(hpos[selected_col]-20, 18, 40, bounds.size.h-18);
 
   // Create the animation
   s_property_animation = property_animation_create_layer_frame(
@@ -136,10 +137,16 @@ static void window_load(Window *window) {
 
   window_set_background_color(window, GColorFromRGB(0, 0, 0));
 
+  // Set up the status bar
+  statusbar = status_bar_layer_create();
+  status_bar_layer_set_colors(statusbar, GColorFromRGB(255, 255, 255),
+                              GColorFromRGB(0, 0, 0));
+  layer_add_child(window_layer, status_bar_layer_get_layer(statusbar));
+
   // Set up column indicator
   col_indicator = layer_create((GRect) {
-    .origin = { hpos[selected_col] - 18, 0 },
-    .size = {36, bounds.size.h},
+    .origin = { hpos[selected_col] - 18, 18 },
+    .size = {36, bounds.size.h - 18},
   });
   layer_set_update_proc(col_indicator, col_indicator_update);
   layer_add_child(window_layer, col_indicator);
@@ -163,6 +170,7 @@ static void window_load(Window *window) {
 
 
 static void window_unload(Window *window) {
+  status_bar_layer_destroy(statusbar);
   layer_destroy(col_indicator);
   for (int row=0; row < 3; row++) {
     for (int col=0; col < 4; col++) {
